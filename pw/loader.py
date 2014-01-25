@@ -5,14 +5,6 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-__all__ = ["config", "session"]
-
-
-class Loader(object):
-    pass
-    
-class Config(dict):
-    pass
 
 config = {
     "url":"sqlite:////" + os.getcwd() + "test.db",
