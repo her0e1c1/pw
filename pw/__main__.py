@@ -7,7 +7,7 @@ from getpass import getpass
 
 import model
 import api
-from .loader import config, set_session
+from .loader import config
 
 
 def parser(input_string):
@@ -25,9 +25,12 @@ def parser(input_string):
 
 
 def main():
-    master_key = "1111aa"  # getpass("master key> ")
+    # init
+    master_key = getpass("master key> ")
+    session = model.make_session()
     config.update({
         "master_key": master_key,
+        "session": session,
     })
 
     while True:
@@ -39,14 +42,10 @@ def main():
         if args.quit:
             break
 
-        with model.session_scope() as session:
-            set_session(session)
-            for command_name in [a for a in dir(args) if not(a.startswith("_"))]:
-                if getattr(args, command_name):
-                    cmd = getattr(api, command_name)
-                    rv = cmd()
-                    if rv:
-                        session.add(rv)
+        for command_name in [a for a in dir(args) if not(a.startswith("_"))]:
+            if getattr(args, command_name):
+                cmd = getattr(api, command_name)
+                cmd()
 
 
 if __name__ == "__main__":

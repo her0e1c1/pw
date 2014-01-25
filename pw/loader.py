@@ -20,11 +20,6 @@ config = {
     "aes_format": "%32s"
 }
 
-session = None
-def set_session(new_session):
-    session = new_session
-
-
 # MYCONFIGPATH = os.environ.get("MYCONFIGPATH")
 # if MYCONFIGPATH is None:
 #     MYCONFIGPATH = "myconfig.ini"

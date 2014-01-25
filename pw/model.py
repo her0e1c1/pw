@@ -6,85 +6,6 @@ from sqlalchemy.orm import sessionmaker
 from .encrypt import encrypt, decrypt
 
 
-Base = declarative_base()
-class Account(Base):
-    __tablename__ = "account"
-
-    id = sql.Column(sql.Integer, primary_key=True)
-    account = sql.Column(sql.BLOB, nullable=True)
-    password = sql.Column(sql.BLOB, nullable=False)
-    description = sql.Column(sql.Unicode, nullable=True)
-
-    @property
-    def raw_account(self):
-        return decrypt(self.account)
-
-    @property
-    def raw_password(self):
-        return decrypt(self.password)
-
-    def update(self, raw_account=None, raw_password=None, description=None):
-        if raw_account is not None:
-            self.account = encrypt(raw_account) 
-
-        if raw_password is not None:
-            self.password = encrypt(raw_password)
-
-        if description is not None:
-            self.description = self.description
-
-    @classmethod
-    def query(cls):
-        return session.query(cls)
-
-    @classmethod
-    def delete(cls, id, account=None):
-        one = cls.query().filter_by(id=id).one()
-        return one
-
-    @classmethod
-    def delete_all(cls):
-        for a in cls.query():
-            yield a
-
-    @classmethod
-    def change_master_key(self, new_aes):
-        for a in cls.query.all():
-            a.update(raw_password=a.raw_password)
-            yield a
-
-    @classmethod
-    def create(cls, raw_account, raw_password, description=None):
-        account = encrypt(raw_account)
-        password = encrypt(raw_password)
-        a = Account(account=account, password=password, description=description)
-        if not cls.exists(account=account):
-            return a
-        else:
-            raise ValueError("%s already exists" % account)
-
-    @classmethod
-    def exists(cls, id=None, account=None):
-        for a in cls.query():
-            if a.id == id:
-                return True
-            if a.account == account:
-                return True
-        else:
-            return False
-
-def search_account(target_account):
-    """
-    find the encrypted account or the decrypted account by a ``target_account`` key.
-    In an either way, return id, **decrypted account**, **decrypted password**.
-    """
-    for a in Account.query.all():
-        id = a.id
-        account, password = self.decrypt(a.account, a.password)
-        if account == target_account or a.account == target_account:
-            return id, account, password
-
-
 def make_session():
     from .loader import config
     url = config.get("url")
@@ -94,17 +15,117 @@ def make_session():
     Session = sessionmaker(bind=engine)
     return Session()
 
-session = make_session()
 
-@contextmanager
-def session_scope():
-    """Provide a transactional scope around a series of operations."""
-    session = make_session()
-    try:
-        yield session
+def autocommit(func):
+    def wrap(*args, **kw):
+        session = make_session()
+        objects = func(*args, **kw)
+        if not objects:
+            return
+
+        if isinstance(objects, list):
+            for obj in objects:
+                session.add(obj)
+        else:
+            session.add(objects)
         session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+    return wrap
+
+
+class AccountManager(type):
+
+    @classmethod
+    def query(cls):
+        cls.session = make_session()
+        return cls.session.query(Account)
+        
+    @classmethod
+    def delete(cls, id, account=None):
+        query = cls.query().filter_by(id=id)
+        if query.first():
+            query.delete()
+            cls.session.commit()
+        else:
+            print("id %s does not exist." % id)
+
+    @classmethod
+    def all(cls):
+        return cls.query().all()
+
+    @classmethod
+    def first(cls, **kw):
+        account = kw.get("account")
+        if account:
+            kw["account"] = encrypt(account)
+
+        return cls.query().filter_by(**kw).first()
+
+    @classmethod
+    def delete_all(cls):
+        cls.query().delete()
+        cls.session.commit()
+
+    @classmethod
+    def exists(cls, id=None, account=None):
+        for a in cls.query():
+            if a.id == id:
+                return True
+            if a.raw_account == account:
+                return True
+        else:
+            return False
+
+    @classmethod
+    def create(cls, raw_account, raw_password, description=None):
+        account = encrypt(raw_account)
+        password = encrypt(raw_password)
+        a = Account(account=account, password=password, description=description)
+        if not cls.exists(account=account):
+            cls.session.add(a)
+            cls.session.commit()
+        else:
+            raise ValueError(u"%s already exists" % account)
+
+    def change_master_key(self, new_aes):
+        for a in self.query.all():
+            a.update(raw_password=a.raw_password)
+            self.session.add(a)
+
+
+Base = declarative_base()
+class Account(Base):
+    __tablename__ = "account"
+
+    id = sql.Column(sql.Integer, primary_key=True)
+    account = sql.Column(sql.BLOB, nullable=True)
+    password = sql.Column(sql.BLOB, nullable=False)
+    description = sql.Column(sql.Unicode, nullable=True)
+    query = AccountManager
+
+    @property
+    def raw_account(self):
+        return decrypt(self.account).strip()
+
+    @property
+    def raw_password(self):
+        return decrypt(self.password).strip()
+
+    def change_master_key(self, master_key):
+        self.account = encrypt(self.raw_account, master_key)
+        self.password = encrypt(self.raw_password, master_key)
+        self.save()
+        
+    def update(self, raw_account=None, raw_password=None, description=None):
+        if raw_account is not None:
+            self.account = encrypt(raw_account) 
+
+        if raw_password is not None:
+            self.password = encrypt(raw_password)
+
+        if description is not None:
+            self.description = self.description
+        self.save()
+
+    def save(self):
+        self.query.session.add(self)
+        self.query.session.commit()
