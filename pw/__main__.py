@@ -5,7 +5,6 @@ import argparse
 import collections
 from getpass import getpass
 
-import model
 import api
 from .loader import config
 
@@ -25,12 +24,11 @@ def parser(input_string):
 
 
 def main():
-    # init
-    master_key = getpass("master key> ")
-    session = model.make_session()
+    master_key = config.get("master_key")
+    if not master_key:
+        master_key = getpass("master key> ")
     config.update({
         "master_key": master_key,
-        "session": session,
     })
 
     while True:
