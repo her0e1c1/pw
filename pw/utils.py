@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 def ask_yes_or_no(prompt="yes or no"):
@@ -7,4 +6,3 @@ def ask_yes_or_no(prompt="yes or no"):
         return True
     else:
         return False
- 
