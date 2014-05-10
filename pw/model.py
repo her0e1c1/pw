@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import types
+
 import sqlalchemy as sql
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -17,7 +19,7 @@ def autocommit(delete=False):
             else:
                 add_or_delete = getattr(session, "add")
 
-            if isinstance(objects, list):
+            if isinstance(objects, types.GeneratorType):
                 for obj in objects:
                     add_or_delete(obj)
             else:
@@ -60,10 +62,6 @@ class AccountManager(object):
             return a
         else:
             raise ValueError(u"%s already exists" % account)
-
-    def change_master_key(self, new_aes):
-        for a in self.query.all():
-            yield a.update(raw_password=a.raw_password)
 
     @classmethod
     def get_by_id_or_account(cls, id_or_account):
