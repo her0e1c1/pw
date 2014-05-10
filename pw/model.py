@@ -5,63 +5,41 @@ from sqlalchemy.orm import sessionmaker
 from .encrypt import encrypt, decrypt
 
 
-def make_session():
-    from .loader import config
-    url = config.get("url")
-    engine = sql.create_engine(url)
-    Account.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    return Session()
+def autocommit(delete=False):
+    def wrapper(f):
+        def wrap(*args, **kw):
+            objects = f(*args, **kw)
+            if not objects:
+                return
+
+            if delete:
+                add_or_delete = getattr(session, "delete")
+            else:
+                add_or_delete = getattr(session, "add")
+
+            if isinstance(objects, list):
+                for obj in objects:
+                    add_or_delete(obj)
+            else:
+                add_or_delete(objects)
+            session.commit()
+        return wrap
+    return wrapper
 
 
-def autocommit(func):
-    def wrap(*args, **kw):
-        session = make_session()
-        objects = func(*args, **kw)
-        if not objects:
-            return
+class AccountManager(object):
 
-        if isinstance(objects, list):
-            for obj in objects:
-                session.add(obj)
+    def __getattribute__(self, name):
+        query = AccountManager.query()
+        f = getattr(query, name, None)
+        if f is not None:
+            return f
         else:
-            session.add(objects)
-        session.commit()
-    return wrap
-
-
-class AccountManager(type):
+            return getattr(AccountManager, name)
 
     @classmethod
     def query(cls):
-        cls.session = make_session()
-        return cls.session.query(Account)
-
-    @classmethod
-    def delete(cls, id, account=None):
-        query = cls.query().filter_by(id=id)
-        if query.first():
-            query.delete()
-            cls.session.commit()
-        else:
-            print("id %s does not exist." % id)
-
-    @classmethod
-    def all(cls):
-        return cls.query().all()
-
-    @classmethod
-    def first(cls, **kw):
-        account = kw.get("account")
-        if account:
-            kw["account"] = encrypt(account)
-
-        return cls.query().filter_by(**kw).first()
-
-    @classmethod
-    def delete_all(cls):
-        cls.query().delete()
-        cls.session.commit()
+        return session.query(Account)
 
     @classmethod
     def exists(cls, id=None, account=None):
@@ -79,18 +57,18 @@ class AccountManager(type):
         password = encrypt(raw_password)
         a = Account(account=account, password=password, description=description)
         if not cls.exists(account=account):
-            cls.session.add(a)
-            cls.session.commit()
+            return a
         else:
             raise ValueError(u"%s already exists" % account)
 
     def change_master_key(self, new_aes):
         for a in self.query.all():
-            a.update(raw_password=a.raw_password)
-            self.session.add(a)
+            yield a.update(raw_password=a.raw_password)
 
 
 Base = declarative_base()
+
+
 class Account(Base):
     __tablename__ = "account"
 
@@ -98,7 +76,8 @@ class Account(Base):
     account = sql.Column(sql.BLOB, nullable=True)
     password = sql.Column(sql.BLOB, nullable=False)
     description = sql.Column(sql.Unicode, nullable=True)
-    query = AccountManager
+
+    query = AccountManager()
 
     @property
     def raw_account(self):
@@ -111,7 +90,7 @@ class Account(Base):
     def change_master_key(self, master_key):
         self.account = encrypt(self.raw_account, master_key)
         self.password = encrypt(self.raw_password, master_key)
-        self.save()
+        return self
 
     def update(self, raw_account=None, raw_password=None, description=None):
         if raw_account is not None:
@@ -122,8 +101,15 @@ class Account(Base):
 
         if description is not None:
             self.description = self.description
-        self.save()
 
-    def save(self):
-        self.query.session.add(self)
-        self.query.session.commit()
+        return self
+
+
+def make_session():
+    from .loader import config
+    url = config.get("url")
+    engine = sql.create_engine(url)
+    Account.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    return Session()
+session = make_session()
