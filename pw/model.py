@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from contextlib import contextmanager
 import sqlalchemy as sql
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -9,7 +8,6 @@ from .encrypt import encrypt, decrypt
 def make_session():
     from .loader import config
     url = config.get("url")
-    print url
     engine = sql.create_engine(url)
     Account.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
@@ -38,7 +36,7 @@ class AccountManager(type):
     def query(cls):
         cls.session = make_session()
         return cls.session.query(Account)
-        
+
     @classmethod
     def delete(cls, id, account=None):
         query = cls.query().filter_by(id=id)
@@ -114,10 +112,10 @@ class Account(Base):
         self.account = encrypt(self.raw_account, master_key)
         self.password = encrypt(self.raw_password, master_key)
         self.save()
-        
+
     def update(self, raw_account=None, raw_password=None, description=None):
         if raw_account is not None:
-            self.account = encrypt(raw_account) 
+            self.account = encrypt(raw_account)
 
         if raw_password is not None:
             self.password = encrypt(raw_password)

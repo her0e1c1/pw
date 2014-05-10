@@ -18,7 +18,7 @@ def encrypt(x, master_key=None):
 
 def decrypt(x, aes=None):
     if aes is None:
-        aes = _make_aes()    
+        aes = _make_aes()
     try:
         return aes.decrypt(x).decode()
     except UnicodeDecodeError:

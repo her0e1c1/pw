@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
-import collections
 import tempfile
 from getpass import getpass
 
-from .model import Account, autocommit
-from .encrypt import encrypt, decrypt
+from .model import Account
 from .utils import ask_yes_or_no
 from .loader import config
 
@@ -44,7 +41,7 @@ def change_password(target_account=None, old_password=None, new_password=None):
 
     a = Account.query.first(account=target_account)
     if not a:
-        print("%s doesn't exits" % target_account) 
+        print("%s doesn't exits" % target_account)
         return
 
     if old_password is None:
