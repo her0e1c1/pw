@@ -65,6 +65,15 @@ class AccountManager(object):
         for a in self.query.all():
             yield a.update(raw_password=a.raw_password)
 
+    @classmethod
+    def get_by_id_or_account(cls, id_or_account):
+        query = cls.query()
+        a = query.filter_by(id=id_or_account).first()
+        if a:
+            return a
+        account = encrypt(id_or_account)
+        a = query.filter_by(account=account).first()
+        return a
 
 Base = declarative_base()
 

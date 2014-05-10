@@ -7,7 +7,12 @@ from .loader import config
 
 
 def parser(input_string):
-    p = argparse.ArgumentParser()
+    if not input_string.startswith("-"):
+        input_string = "-" + input_string
+
+    p = argparse.ArgumentParser(
+        add_help=False,
+    )
     p.add_argument("-c", "--create-account", action="store_true")
     p.add_argument("-s", "--show_all", action="store_true")
     p.add_argument("-m", "--change-master-key", action="store_true")
@@ -17,19 +22,21 @@ def parser(input_string):
     p.add_argument("-q", "--quit", action="store_true")
 
     args = p.parse_args(input_string.split())
+
     return args
 
 
 def main():
     master_key = getpass("master key> ")
-    config.update({
-        "master_key": master_key,
-    })
+    config["master_key"] = master_key
 
     while True:
         try:
             args = parser(raw_input("> "))
-        except:
+        except (KeyboardInterrupt, EOFError):
+            break
+        except SystemExit:
+            # show usage and try again
             continue
 
         if args.quit:

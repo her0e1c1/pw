@@ -41,8 +41,8 @@ def change_password(target_account=None, old_password=None, new_password=None):
     if target_account is None:
         target_account = raw_input("account> ")
 
-    a = Account.query.first(account=target_account)
-    if not a:
+    a = Account.query.get_by_id_or_account(target_account)
+    if a is None:
         print("%s doesn't exits" % target_account)
         return
 
@@ -55,6 +55,7 @@ def change_password(target_account=None, old_password=None, new_password=None):
         return a.update(raw_password=new_password)
     else:
         print("%s doesn't match the registered password" % old_password)
+
 
 @autocommit()
 def change_master_key(new_master_key=None):
@@ -77,5 +78,8 @@ def delete_all_accounts():
 @autocommit(delete=True)
 def delete_by_id(id=None):
     id = int(raw_input("delete id> "))
-    if ask_yes_or_no("Delete %d account. Are you sure?[y/N]" % id):
-        return Account.query.delete(id)
+    a = Account.query.filter_by(id=id).first()
+    if a is None:
+        print("The account with id = {} doesn't exist.".format(id))
+    elif ask_yes_or_no("Delete %d account. Are you sure?[y/N]" % id):
+        return a

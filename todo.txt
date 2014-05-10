@@ -5,6 +5,9 @@ TODO:
 * APIを増やす
 * inputのパーサーを分かりやすくする
 * print文を増やして対話をわかりやすくする
+  - loopのモジュール作成
+
 * GUIをつける
+* webserver
 * setup.pyを修正
-* setup用のコマンド追加
+* setup用のコマンド追加 (createdbは分けて記述)
