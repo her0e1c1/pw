@@ -6,6 +6,5 @@ if "~" in url:
 
 config = {
     "url": url,
-    "master_key": "",
     "aes_format": "%32s"
 }

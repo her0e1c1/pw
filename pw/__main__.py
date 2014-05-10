@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
 import argparse
-import collections
 from getpass import getpass
 
 import api
@@ -24,9 +21,7 @@ def parser(input_string):
 
 
 def main():
-    master_key = config.get("master_key")
-    if not master_key:
-        master_key = getpass("master key> ")
+    master_key = getpass("master key> ")
     config.update({
         "master_key": master_key,
     })
@@ -47,4 +42,4 @@ def main():
 
 
 if __name__ == "__main__":
-    m = main()
+    main()

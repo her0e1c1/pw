@@ -7,3 +7,4 @@ TODO:
 * print文を増やして対話をわかりやすくする
 * GUIをつける
 * setup.pyを修正
+* setup用のコマンド追加
