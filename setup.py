@@ -9,6 +9,6 @@ setup(
     packages=find_packages(),
     entry_points="""
     [console_scripts]
-    password = pw.commands:do
+    pw = pw.commands:do
     """
 )
