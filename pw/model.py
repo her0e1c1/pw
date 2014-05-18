@@ -32,36 +32,35 @@ def autocommit(delete=False):
 class AccountManager(object):
 
     def __getattribute__(self, name):
+        meth = getattr(AccountManager, name, None)
+        if meth is not None:
+            return meth
         query = AccountManager.query()
-        f = getattr(query, name, None)
-        if f is not None:
-            return f
-        else:
-            return getattr(AccountManager, name)
+        return getattr(query, name)
 
     @classmethod
     def query(cls):
         return session.query(Account)
 
     @classmethod
-    def exists(cls, id=None, account=None):
+    def exists(cls, id=None, raw_account=None):
         for a in cls.query():
             if a.id == id:
                 return True
-            if a.raw_account == account:
+            elif a.raw_account == raw_account:
                 return True
         else:
             return False
 
     @classmethod
     def create(cls, raw_account, raw_password, description=None):
-        account = encrypt(raw_account)
-        password = encrypt(raw_password)
-        a = Account(account=account, password=password, description=description)
-        if not cls.exists(account=account):
-            return a
-        else:
-            raise ValueError(u"%s already exists" % account)
+        if cls.exists(raw_account=raw_account):
+            raise ValueError(u"%s already exists" % raw_account)
+
+        a = Account(description=description)
+        a.raw_account = raw_account
+        a.raw_password = raw_password
+        return a
 
     @classmethod
     def get_by_id_or_account(cls, id_or_account):
@@ -90,9 +89,17 @@ class Account(Base):
     def raw_account(self):
         return decrypt(self.account).strip()
 
+    @raw_account.setter
+    def raw_account(self, val):
+        self.account = encrypt(val)
+
     @property
     def raw_password(self):
         return decrypt(self.password).strip()
+
+    @raw_password.setter
+    def raw_password(self, val):
+        self.password = encrypt(val)
 
     def change_master_key(self, master_key):
         self.account = encrypt(self.raw_account, master_key)
