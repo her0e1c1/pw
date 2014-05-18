@@ -3,15 +3,17 @@ import unittest
 from pw.model import AccountManager, autocommit
 from pw.encrypt import encrypt, decrypt
 
-from . import AccountFactory
+from . import AccountFactory, BaseTestCase
 
 
 Account = AccountFactory.FACTORY_FOR
 session = AccountFactory.FACTORY_SESSION
 
 
-class ModelAccountTest(unittest.TestCase):
+class ModelAccountTests(BaseTestCase):
+
     def setUp(self):
+        super(ModelAccountTests, self).setUp()
         self.acc = AccountFactory()
 
     def test_account_factory(self):
@@ -46,12 +48,13 @@ class ModelAccountTest(unittest.TestCase):
         self.assertEqual(acc.raw_password, self.acc.raw_password)
 
 
-class ModelAccountManagerTest(unittest.TestCase):
+class ModelAccountManagerTests(BaseTestCase):
     def setUp(self):
+        super(ModelAccountManagerTests, self).setUp()
         self.query = Account.query
         self.acc = AccountFactory()
-        session.add(self.acc)
-        session.commit()
+        self.session.add(self.acc)
+        self.session.commit()
         self.not_duplicated_id = self.acc.id + 1
         self.not_duplicated_account = "NOT DUPLICATED ACCOUNT!"
 
@@ -102,20 +105,21 @@ class ModelAccountManagerTest(unittest.TestCase):
             self.query.create(self.acc.raw_account, "password")
 
 
-class ModelAutocommitTest(unittest.TestCase):
+class ModelAutocommitTests(BaseTestCase):
     def setUp(self):
+        super(ModelAutocommitTests, self).setUp()
         self.query = Account.query
         self.account_list = []
         for _ in range(10):
             acc = AccountFactory()
-            session.add(acc)
+            self.session.add(acc)
             self.account_list.append(acc)
-        session.commit()
+        self.session.commit()
         self.count = self.current_count
 
     @property
     def current_count(self):
-        return session.query(Account).count()
+        return self.session.query(Account).count()
 
     def test_add(self):
         @autocommit()

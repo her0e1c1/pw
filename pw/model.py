@@ -10,9 +10,11 @@ from .encrypt import encrypt, decrypt
 def autocommit(delete=False):
     def wrapper(f):
         def wrap(*args, **kw):
+            session = Base.session
+
             objects = f(*args, **kw)
             if not objects:
-                return
+                return objects
 
             if delete:
                 add_or_delete = getattr(session, "delete")
@@ -25,6 +27,7 @@ def autocommit(delete=False):
             else:
                 add_or_delete(objects)
             session.commit()
+            return objects
         return wrap
     return wrapper
 
@@ -40,7 +43,7 @@ class AccountManager(object):
 
     @classmethod
     def query(cls):
-        return session.query(Account)
+        return Base.session.query(Account)
 
     @classmethod
     def exists(cls, id=None, raw_account=None):
@@ -126,4 +129,5 @@ def make_session():
     Account.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     return Session()
-session = make_session()
+
+Base.session = make_session()

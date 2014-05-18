@@ -22,17 +22,17 @@ def show_all():
 
 
 @autocommit()
-def create_account(account=None, password=None, name=None):
+def create_account(account=None, password=None, description=None):
     """if there is no account on DB, then make it. """
     # intput
     if account is None:
         account = raw_input("account> ")
     if password is None:
         password = getpass("password> ")
-    if name is None:
-        name = raw_input("description> ")
+    if description is None:
+        description = raw_input("description> ")
 
-    return Account.query.create(account, password, name)
+    return Account.query.create(account, password, description)
 
 
 @autocommit()
