@@ -21,7 +21,7 @@ def autocommit(delete=False):
             else:
                 add_or_delete = getattr(session, "add")
 
-            if isinstance(objects, types.GeneratorType):
+            if isinstance(objects, (types.GeneratorType, list)):
                 for obj in objects:
                     add_or_delete(obj)
             else:

@@ -77,7 +77,8 @@ def delete_all_accounts():
 
 @autocommit(delete=True)
 def delete_by_id(id=None):
-    id = int(raw_input("delete id> "))
+    if id is None:
+        id = int(raw_input("delete id> "))
     a = Account.query.filter_by(id=id).first()
     if a is None:
         print("The account with id = {} doesn't exist.".format(id))
