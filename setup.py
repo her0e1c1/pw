@@ -1,14 +1,18 @@
 from setuptools import setup, find_packages
-import pw
+
+
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
 
 setup(
-    name="pw",
-    version="1.0.0",
+    name="pwm",
+    version="2.0.0",
     description="python password manager",
-    author=pw.__author__,
+    author="Hiroyuki Ishii",
     packages=find_packages(),
+    install_requires=required,
     entry_points="""
     [console_scripts]
-    pw = pw.commands:do
+    pwm = pwm.main:main
     """
 )
