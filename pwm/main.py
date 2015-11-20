@@ -7,6 +7,8 @@ import tempfile
 from getpass import getpass
 from Crypto.Cipher import AES
 
+DECRYPTED_STRING = "Don't DELETE THI LINE"
+
 
 def parse():
     p = argparse.ArgumentParser()
@@ -19,11 +21,16 @@ def parse():
 
 def edit_file(lines, editor):
     import subprocess
-    environ = os.environ.copy()
+
+    if lines[:len(DECRYPTED_STRING)] != DECRYPTED_STRING:
+        print("The file can't be decrypted")
+        return
+
     with tempfile.NamedTemporaryFile("w+f") as tf:
         tf.write(lines)
         tf.file.flush()
 
+        environ = os.environ.copy()
         cmd = '%s "%s"' % (editor, tf.name)
         c = subprocess.Popen(cmd, env=environ, shell=True)
         c.wait()
@@ -83,7 +90,7 @@ def main():
         if os.path.isfile(args.source):
             print("%s exists already" % args.source)
             sys.exit(1)
-        lines = ""
+        lines = DECRYPTED_STRING
     elif args.rewrite:
         with open(args.source, "r") as f:
             lines = handler.decrypt_lines(f.read())
