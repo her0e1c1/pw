@@ -1,4 +1,4 @@
 build/
 dist/
 *.pyc
-pw.egg-info/
+pwm.egg-info/
