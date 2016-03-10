@@ -6,7 +6,7 @@ with open('requirements.txt') as f:
 
 setup(
     name="pwm",
-    version="2.0.0",
+    version="3.0.0",
     description="python password manager",
     author="Hiroyuki Ishii",
     packages=find_packages(),
